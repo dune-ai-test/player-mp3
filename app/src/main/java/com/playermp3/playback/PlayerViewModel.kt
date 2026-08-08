@@ -12,9 +12,7 @@ import androidx.media3.session.SessionToken
 import com.playermp3.data.AudioRepository
 import com.playermp3.data.AudioTrack
 import com.playermp3.data.LibraryData
-import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,39 +41,42 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     val ui: StateFlow<PlayerUiState> = _ui.asStateFlow()
 
     private var controller: MediaController? = null
-    private var connectJob: kotlinx.coroutines.Job? = null
+    private var connecting = false
 
     // ------------------------------------------------------------------
     // Connectivity & ticking
     // ------------------------------------------------------------------
 
     fun connect() {
-        if (controller != null || connectJob?.isActive == true) return
-        connectJob = viewModelScope.launch {
-            val token = SessionToken(
-                getApplication(),
-                ComponentName(getApplication(), PlayerService::class.java)
-            )
-            val future: ListenableFuture<MediaController> =
-                MediaController.Builder(getApplication(), token).buildAsync()
-            try {
-                val c = future.await()
-                this@PlayerViewModel.controller = c
-                c.addListener(object : Player.Listener {
-                    override fun onEvents(player: Player, events: Player.Events) {
-                        publish(c)
+        if (controller != null || connecting) return
+        connecting = true
+        val token = SessionToken(
+            getApplication(),
+            ComponentName(getApplication(), PlayerService::class.java)
+        )
+        val future = MediaController.Builder(getApplication(), token).buildAsync()
+        future.addListener(
+            {
+                try {
+                    val c = future.get()
+                    this@PlayerViewModel.controller = c
+                    c.addListener(object : Player.Listener {
+                        override fun onEvents(player: Player, events: Player.Events) {
+                            publish(c)
+                        }
+                    })
+                    viewModelScope.launch {
+                        while (true) {
+                            publish(c)
+                            delay(500L)
+                        }
                     }
-                })
-                viewModelScope.launch {
-                    while (true) {
-                        publish(c)
-                        delay(500L)
-                    }
+                } catch (_: Exception) {
+                    connecting = false
                 }
-            } catch (_: Exception) {
-                // Connection will be re-attempted on the next connect() call.
-            }
-        }
+            },
+            java.util.concurrent.Executors.newSingleThreadExecutor()
+        )
     }
 
     private fun publish(c: MediaController) {

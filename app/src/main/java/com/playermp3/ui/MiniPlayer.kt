@@ -10,14 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.SkipNext
-import androidx.compose.material.icons.automirrored.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -68,7 +68,7 @@ fun MiniPlayer(
                     onClick = onToggleShuffle,
                 )
                 RoundControl(
-                    icon = Icons.AutoMirrored.Filled.SkipPrevious,
+                    icon = Icons.Filled.SkipPrevious,
                     contentDescription = "Previous",
                     size = 46.dp,
                     padding = 24.dp,
@@ -81,7 +81,7 @@ fun MiniPlayer(
                     onClick = onTogglePlay,
                 )
                 RoundControl(
-                    icon = Icons.AutoMirrored.Filled.SkipNext,
+                    icon = Icons.Filled.SkipNext,
                     contentDescription = "Next",
                     size = 46.dp,
                     padding = 24.dp,

@@ -15,14 +15,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.SkipNext
-import androidx.compose.material.icons.automirrored.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Airplay
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -240,7 +240,7 @@ fun NowPlayingScreen(
                         onClick = onToggleShuffle,
                     )
                     RoundControl(
-                        icon = Icons.AutoMirrored.Filled.SkipPrevious,
+                        icon = Icons.Filled.SkipPrevious,
                         contentDescription = "Previous",
                         size = 52.dp,
                         padding = 26.dp,
@@ -253,7 +253,7 @@ fun NowPlayingScreen(
                         onClick = onTogglePlay,
                     )
                     RoundControl(
-                        icon = Icons.AutoMirrored.Filled.SkipNext,
+                        icon = Icons.Filled.SkipNext,
                         contentDescription = "Next",
                         size = 52.dp,
                         padding = 26.dp,

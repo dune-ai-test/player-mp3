@@ -35,6 +35,7 @@ import com.playermp3.ui.theme.Charcoal
 import com.playermp3.ui.theme.GlassBorder
 import com.playermp3.ui.theme.GlassCard
 import com.playermp3.ui.theme.TextPrimary
+import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TextTertiary
 import kotlin.math.absoluteValue
 
