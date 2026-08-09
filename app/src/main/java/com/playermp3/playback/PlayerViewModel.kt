@@ -7,11 +7,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.playermp3.data.AudioRepository
 import com.playermp3.data.AudioTrack
+import com.playermp3.data.AppSettings
 import com.playermp3.data.LibraryData
+import com.playermp3.data.SettingsStore
+import com.playermp3.ui.theme.ThemeMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,9 +40,12 @@ data class PlayerUiState(
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = AudioRepository(application)
+    private val settingsStore = SettingsStore(application)
 
     private val _ui = MutableStateFlow(PlayerUiState())
     val ui: StateFlow<PlayerUiState> = _ui.asStateFlow()
+
+    val settings: StateFlow<AppSettings> = settingsStore.settings
 
     private var controller: MediaController? = null
     private var connecting = false
@@ -60,6 +67,9 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                 try {
                     val c = future.get()
                     this@PlayerViewModel.controller = c
+                    c.setPlaybackParameters(
+                        PlaybackParameters(settingsStore.settings.value.playbackSpeed, 1f)
+                    )
                     c.addListener(object : Player.Listener {
                         override fun onEvents(player: Player, events: Player.Events) {
                             publish(c)
@@ -116,19 +126,50 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun loadLibrary() {
         if (_ui.value.loaded && _ui.value.library != null) return
-        viewModelScope.launch {
-            _ui.update { it.copy(loading = true) }
-            val data = repository.load()
-            _ui.update { it.copy(loading = false, loaded = true, library = data) }
-        }
+        refreshLibrary()
     }
 
     fun refreshLibrary() {
         viewModelScope.launch {
             _ui.update { it.copy(loading = true) }
-            val data = repository.load()
+            val data = repository.load(settingsStore.settings.value.folders.toList())
             _ui.update { it.copy(loading = false, loaded = true, library = data) }
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Settings
+    // ------------------------------------------------------------------
+
+    fun setThemeMode(mode: ThemeMode) {
+        settingsStore.setThemeMode(mode)
+    }
+
+    fun addFolder(uriString: String) {
+        settingsStore.addFolder(uriString)
+        viewModelScope.launch {
+            _ui.update { it.copy(loading = true) }
+            val data = repository.load(settingsStore.settings.value.folders.toList())
+            _ui.update { it.copy(loading = false, loaded = true, library = data) }
+        }
+    }
+
+    fun clearFolders() {
+        settingsStore.clearFolders()
+        refreshLibrary()
+    }
+
+    fun cyclePlaybackSpeed() {
+        val speed = settingsStore.cyclePlaybackSpeed()
+        controller?.setPlaybackParameters(PlaybackParameters(speed, 1f))
+    }
+
+    fun setEqualizer(on: Boolean) {
+        settingsStore.setEqualizer(on)
+    }
+
+    fun setGapless(on: Boolean) {
+        settingsStore.setGapless(on)
     }
 
     // ------------------------------------------------------------------

@@ -21,13 +21,17 @@ import androidx.compose.ui.unit.dp
 import com.playermp3.data.Album
 import com.playermp3.playback.PlayerUiState
 import com.playermp3.ui.AlbumArt
+import com.playermp3.ui.HomeTab
 import com.playermp3.ui.SectionHeader
+import com.playermp3.ui.TopNav
 import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 
 @Composable
 fun AlbumsScreen(
     ui: PlayerUiState,
+    selectedTab: HomeTab,
+    onTabSelect: (HomeTab) -> Unit,
     onAlbum: (Album) -> Unit,
 ) {
     val albums = ui.library?.albums ?: emptyList()
@@ -42,12 +46,18 @@ fun AlbumsScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = 20.dp,
             end = 20.dp,
-            top = 8.dp,
+            top = 0.dp,
             bottom = 20.dp,
         ),
     ) {
         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-            SectionHeader(text = "Albums")
+            TopNav(selected = selectedTab, onSelect = onTabSelect)
+        }
+        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+            SectionHeader(
+                text = "Albums",
+                modifier = Modifier.padding(top = 16.dp),
+            )
         }
         items(
             items = albums,

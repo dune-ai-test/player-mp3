@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -25,14 +24,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.playermp3.data.Album
 import com.playermp3.data.AudioTrack
 import com.playermp3.playback.PlayerUiState
 import com.playermp3.ui.AlbumArt
 import com.playermp3.ui.GlassSurface
+import com.playermp3.ui.HomeTab
 import com.playermp3.ui.RoundControl
 import com.playermp3.ui.SectionHeader
-import com.playermp3.ui.TrackRow
+import com.playermp3.ui.TopNav
 import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TextTertiary
@@ -40,8 +39,10 @@ import com.playermp3.ui.theme.TextTertiary
 @Composable
 fun LibraryScreen(
     ui: PlayerUiState,
+    selectedTab: HomeTab,
+    onTabSelect: (HomeTab) -> Unit,
     onPlay: (AudioTrack, List<AudioTrack>) -> Unit,
-    onAlbum: (Album) -> Unit,
+    onAlbum: (com.playermp3.data.Album) -> Unit,
     onOpenSearch: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -51,25 +52,23 @@ fun LibraryScreen(
             .statusBarsPadding()
     ) {
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Library",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = TextPrimary,
-                )
-                Spacer(Modifier.weight(1f))
-                RoundControl(
-                    icon = Icons.Filled.Search,
-                    contentDescription = "Search",
-                    color = TextSecondary,
-                    onClick = onOpenSearch,
-                )
-            }
+            TopNav(
+                selected = selectedTab,
+                onSelect = onTabSelect,
+                trailing = {
+                    Row(Modifier.padding(start = 12.dp)) {
+                        RoundControl(
+                            icon = Icons.Filled.Search,
+                            contentDescription = "Search",
+                            color = TextSecondary,
+                            onClick = onOpenSearch,
+                        )
+                    }
+                },
+            )
+        }
+        item {
+            Spacer(Modifier.height(14.dp))
         }
 
         when {
@@ -85,59 +84,59 @@ fun LibraryScreen(
             }
 
             !ui.hasPermission -> item {
-                PermissionPrompt(onRefresh = onRefresh)
+                LibraryNotice(
+                    title = "Audio access needed",
+                    body = "Allow music access to import the songs stored on this device.",
+                )
             }
 
             ui.library == null -> item {
-                PermissionPrompt(onRefresh = onRefresh)
+                LibraryNotice(
+                    title = "Audio access needed",
+                    body = "Allow music access to import the songs stored on this device.",
+                )
             }
 
             ui.library?.allSongs?.isEmpty() == true -> item {
-                NoMusicPrompt(onRefresh = onRefresh)
+                LibraryNotice(
+                    title = "No music found",
+                    body = "Add MP3 files to your device or pick a music folder in Settings.",
+                    onRefresh = onRefresh,
+                )
             }
 
             else -> {
                 val library = ui.library!!
                 if (ui.recentlyPlayed.isNotEmpty()) {
                     item {
-                        Column(Modifier.padding(top = 12.dp, bottom = 4.dp)) {
-                            SectionHeader(
-                                text = "Recently Played",
-                                modifier = Modifier.padding(horizontal = 20.dp),
-                            )
-                        }
+                        SectionHeader(
+                            text = "Recently Played",
+                            modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 10.dp),
+                        )
                     }
-                    item {
-                        LazyRow(
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                                horizontal = 20.dp
-                            ),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            items(ui.recentlyPlayed, key = { it.id }) { track ->
-                                TrackCard(
-                                    track = track,
-                                    onClick = { onPlay(track, library.allSongs) },
-                                )
-                            }
-                        }
+                    items(
+                        items = ui.recentlyPlayed,
+                        key = { it.id },
+                    ) { track ->
+                        PlayedRow(
+                            track = track,
+                            onClick = { onPlay(track, library.allSongs) },
+                        )
                     }
                 }
 
                 item {
-                    Column(Modifier.padding(top = 20.dp, bottom = 6.dp)) {
-                        SectionHeader(
-                            text = "All Songs",
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                        )
-                    }
+                    SectionHeader(
+                        text = "All Songs",
+                        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 6.dp),
+                    )
                 }
 
                 items(
                     items = library.allSongs,
                     key = { it.id },
                 ) { track ->
-                    TrackRow(
+                    PlayedRow(
                         track = track,
                         onClick = { onPlay(track, library.allSongs) },
                     )
@@ -148,71 +147,61 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun TrackCard(
+private fun PlayedRow(
     track: AudioTrack,
     onClick: () -> Unit,
 ) {
-    Column(
+    Row(
         modifier = Modifier
-            .width(148.dp)
+            .fillMaxWidth()
             .clickable { onClick() }
+            .padding(horizontal = 20.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         AlbumArt(
             artworkUri = track.artworkUri?.toString(),
             albumTitle = track.album,
-            size = 148.dp,
-            corner = 18.dp,
+            size = 48.dp,
+            corner = 12.dp,
         )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = track.title,
-            style = MaterialTheme.typography.titleSmall,
-            color = TextPrimary,
-            maxLines = 1,
-        )
-        Text(
-            text = track.artist,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun NoMusicPrompt(onRefresh: () -> Unit) {
-    GlassSurface(modifier = Modifier.padding(20.dp)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
             Text(
-                text = "No music found",
-                style = MaterialTheme.typography.titleMedium,
+                text = track.title,
+                style = MaterialTheme.typography.titleSmall,
                 color = TextPrimary,
+                maxLines = 1,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(2.dp))
             Text(
-                text = "Add MP3 files to your device, then rescan the library.",
-                style = MaterialTheme.typography.bodyMedium,
+                text = track.artist,
+                style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
-            )
-            Spacer(Modifier.height(16.dp))
-            RoundControl(
-                icon = Icons.Filled.Refresh,
-                contentDescription = "Rescan",
-                background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.05f),
-                onClick = onRefresh,
+                maxLines = 1,
             )
         }
+        Text(
+            text = formatDuration(track.durationMs),
+            style = MaterialTheme.typography.bodySmall,
+            color = TextTertiary,
+        )
     }
 }
 
+private fun formatDuration(ms: Long): String {
+    val totalSeconds = (ms.coerceAtLeast(0L)) / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
+}
+
 @Composable
-private fun PermissionPrompt(onRefresh: () -> Unit) {
-    GlassSurface(modifier = Modifier.padding(20.dp)) {
+private fun LibraryNotice(
+    title: String,
+    body: String,
+    onRefresh: (() -> Unit)? = null,
+) {
+    GlassSurface(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -220,16 +209,25 @@ private fun PermissionPrompt(onRefresh: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = "Audio access needed",
+                text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = TextPrimary,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Allow music access to import the songs stored on this device.",
+                text = body,
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary,
             )
+            if (onRefresh != null) {
+                Spacer(Modifier.height(16.dp))
+                RoundControl(
+                    icon = Icons.Filled.Refresh,
+                    contentDescription = "Rescan",
+                    background = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.05f),
+                    onClick = onRefresh,
+                )
+            }
         }
     }
 }

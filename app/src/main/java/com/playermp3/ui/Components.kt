@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
@@ -81,6 +82,15 @@ fun AlbumArt(
                     listOf(fallback, fallback.copy(alpha = 0.55f))
                 )
             ),
+        val fallback = palette[(albumTitle.hashCode().absoluteValue) % palette.size]
+    Box(
+        modifier = (if (size != null) modifier.size(size) else modifier)
+            .clip(RoundedCornerShape(corner))
+            .background(
+                Brush.linearGradient(
+                    listOf(fallback, fallback.copy(alpha = 0.55f))
+                )
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (!artworkUri.isNullOrBlank()) {
@@ -90,12 +100,14 @@ fun AlbumArt(
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
+        } else {
+            Icon(
+                imageVector = Icons.Filled.MusicNote,
+                contentDescription = albumTitle,
+                tint = TextPrimary.copy(alpha = 0.6f),
+                modifier = Modifier.size((size ?: 48.dp) * 0.42f),
+            )
         }
-        Text(
-            text = albumTitle.take(1).uppercase(),
-            style = MaterialTheme.typography.titleLarge,
-            color = TextPrimary.copy(alpha = 0.9f),
-        )
     }
 }
 
@@ -184,6 +196,7 @@ fun TrackRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     number: Int? = null,
+    showDuration: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -222,10 +235,12 @@ fun TrackRow(
                 maxLines = 1,
             )
         }
-        Text(
-            text = formatTime(track.durationMs),
-            style = MaterialTheme.typography.bodySmall,
-            color = TextTertiary,
-        )
+        if (showDuration) {
+            Text(
+                text = formatTime(track.durationMs),
+                style = MaterialTheme.typography.bodySmall,
+                color = TextTertiary,
+            )
+        }
     }
 }

@@ -102,6 +102,8 @@ fun NowPlayingScreen(
                 icon = Icons.Filled.KeyboardArrowDown,
                 contentDescription = "Collapse",
                 color = TextPrimary,
+                size = 44.dp,
+                padding = 26.dp,
                 onClick = onBack,
             )
             Spacer(Modifier.weight(1f))
@@ -109,6 +111,8 @@ fun NowPlayingScreen(
                 icon = Icons.Filled.MoreVert,
                 contentDescription = "More options",
                 color = TextSecondary,
+                size = 44.dp,
+                padding = 26.dp,
                 onClick = {},
             )
         }
@@ -200,8 +204,8 @@ fun NowPlayingScreen(
                         dragFraction = null
                     },
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color.White,
+                        thumbColor = TextPrimary,
+                        activeTrackColor = TextPrimary,
                         inactiveTrackColor = TrackFill,
                     ),
                     modifier = Modifier.fillMaxWidth(),

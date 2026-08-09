@@ -48,11 +48,29 @@ import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TextTertiary
 
+import androidx.compose.ui.unit.dp
+import com.playermp3.data.Album
+import com.playermp3.data.AudioTrack
+import com.playermp3.playback.PlayerUiState
+import com.playermp3.ui.AlbumArt
+import com.playermp3.ui.GlassSurface
+import com.playermp3.ui.HomeTab
+import com.playermp3.ui.RoundControl
+import com.playermp3.ui.TopNav
+import com.playermp3.ui.TrackRow
+import com.playermp3.ui.formatTime
+import com.playermp3.ui.theme.Charcoal
+import com.playermp3.ui.theme.GlassCard
+import com.playermp3.ui.theme.PaperText
+import com.playermp3.ui.theme.TextPrimary
+import com.playermp3.ui.theme.TextSecondary
+import com.playermp3.ui.theme.TextTertiary
+
 @Composable
 fun AlbumDetailScreen(
     album: Album,
     ui: PlayerUiState,
-    onBack: () -> Unit,
+    onTabSelect: (HomeTab) -> Unit,
     onPlay: (AudioTrack, List<AudioTrack>) -> Unit,
 ) {
     Column(
@@ -60,32 +78,11 @@ fun AlbumDetailScreen(
             .fillMaxSize()
             .statusBarsPadding()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RoundControl(
-                icon = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                color = TextPrimary,
-                onClick = onBack,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = "Album",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextPrimary,
-            )
-            Spacer(Modifier.weight(1f))
-            RoundControl(
-                icon = Icons.Filled.MoreVert,
-                contentDescription = "More options",
-                color = TextSecondary,
-                onClick = {},
-            )
-        }
+        TopNav(
+            selected = HomeTab.Albums,
+            onSelect = onTabSelect,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
