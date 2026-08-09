@@ -79,11 +79,12 @@ fun NowPlayingScreen(
 
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     val duration = ui.durationMs.coerceAtLeast(track.durationMs)
+    val trackDuration = duration.coerceAtLeast(1L)
     val fraction = if (duration > 0L) {
-        (ui.positionMs.toFloat() / duration.toFloat()).coerceIn(0f, 1f)
+        (ui.positionMs.toFloat() / trackDuration.toFloat()).coerceIn(0f, 1f)
     } else 0f
-    val displayFraction = dragFraction ?: fraction
-    val displayPosition = dragFraction?.let { (it * duration).toLong() } ?: ui.positionMs
+    val displayFraction = (dragFraction ?: fraction).coerceIn(0f, 1f)
+    val displayPosition = dragFraction?.let { (it * trackDuration).toLong() } ?: ui.positionMs
 
     Column(
         modifier = Modifier
@@ -198,11 +199,12 @@ fun NowPlayingScreen(
 
                 Slider(
                     value = displayFraction,
-                    onValueChange = { dragFraction = it },
+                    onValueChange = { dragFraction = it.coerceIn(0f, 1f) },
                     onValueChangeFinished = {
-                        dragFraction?.let { onSeekTo((it * duration).toLong()) }
+                        dragFraction?.let { onSeekTo((it * trackDuration).toLong()) }
                         dragFraction = null
                     },
+                    enabled = duration > 0L,
                     colors = SliderDefaults.colors(
                         thumbColor = TextPrimary,
                         activeTrackColor = TextPrimary,

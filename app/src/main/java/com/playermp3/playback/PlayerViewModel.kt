@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.session.MediaController
@@ -17,6 +18,7 @@ import com.playermp3.data.AppSettings
 import com.playermp3.data.LibraryData
 import com.playermp3.data.SettingsStore
 import com.playermp3.ui.theme.ThemeMode
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,12 +52,20 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     private var controller: MediaController? = null
     private var connecting = false
+    private var tickerJob: Job? = null
     private var pendingPlay: Pair<AudioTrack, List<AudioTrack>>? = null
     private var pendingSingle: AudioTrack? = null
 
     // ------------------------------------------------------------------
     // Connectivity & ticking
     // ------------------------------------------------------------------
+
+    private fun safePublish(c: MediaController) {
+        try {
+            publish(c)
+        } catch (_: Exception) {
+        }
+    }
 
     fun connect() {
         if (controller != null || connecting) return
@@ -75,12 +85,16 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     )
                     c.addListener(object : Player.Listener {
                         override fun onEvents(player: Player, events: Player.Events) {
-                            publish(c)
+                            safePublish(c)
+                        }
+
+                        override fun onPlayerError(error: PlaybackException) {
+                            _ui.update { it.copy(currentTrack = null, isPlaying = false) }
                         }
                     })
-                    viewModelScope.launch {
+                    tickerJob = viewModelScope.launch {
                         while (true) {
-                            publish(c)
+                            safePublish(c)
                             delay(500L)
                         }
                     }
@@ -287,11 +301,14 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     override fun onCleared() {
+        tickerJob?.cancel()
+        tickerJob = null
         try {
             controller?.release()
         } catch (_: Exception) {
         }
         controller = null
+        connecting = false
         super.onCleared()
     }
 
