@@ -35,6 +35,7 @@ import coil.compose.AsyncImage
 import com.playermp3.ui.theme.Charcoal
 import com.playermp3.ui.theme.GlassBorder
 import com.playermp3.ui.theme.GlassCard
+import com.playermp3.ui.theme.PaperText
 import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TextTertiary
@@ -148,7 +149,7 @@ fun StreamBigButton(
         Icon(
             imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
             contentDescription = if (isPlaying) "Pause" else "Play",
-            tint = TextPrimary,
+            tint = PaperText,
             modifier = Modifier.size(size * 0.34f),
         )
     }

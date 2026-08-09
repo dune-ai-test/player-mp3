@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Airplay
@@ -30,15 +32,18 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,6 +55,7 @@ import com.playermp3.ui.StreamBigButton
 import com.playermp3.ui.formatTime
 import com.playermp3.ui.theme.Charcoal
 import com.playermp3.ui.theme.IconGray
+import com.playermp3.ui.theme.PaperText
 import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TrackFill
@@ -85,6 +91,14 @@ fun NowPlayingScreen(
     var dragFraction by remember { mutableStateOf<Float?>(null) }
     val scrollState = rememberScrollState()
     val dismissThreshold = with(LocalDensity.current) { 150.dp.toPx() }
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val window = (context as? android.app.Activity)?.window
+        window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        onDispose {
+            window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
     val duration = ui.durationMs.coerceAtLeast(track.durationMs)
     val trackDuration = duration.coerceAtLeast(1L)
     val fraction = if (duration > 0L) {
@@ -292,14 +306,32 @@ fun NowPlayingScreen(
                         color = TextPrimary,
                         onClick = onNext,
                     )
-                    RoundControl(
-                        icon = Icons.Filled.Repeat,
-                        contentDescription = "Repeat",
-                        size = 46.dp,
-                        padding = 24.dp,
-                        color = if (ui.repeatAll) TextPrimary else IconGray,
-                        onClick = onToggleRepeat,
-                    )
+                    Box {
+                        RoundControl(
+                            icon = Icons.Filled.Repeat,
+                            contentDescription = "Repeat",
+                            size = 46.dp,
+                            padding = 24.dp,
+                            color = if (ui.repeatAll || ui.repeatOne) TextPrimary else IconGray,
+                            onClick = onToggleRepeat,
+                        )
+                        if (ui.repeatOne) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .size(18.dp)
+                                    .clip(CircleShape)
+                                    .background(TextPrimary),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "1",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = PaperText,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

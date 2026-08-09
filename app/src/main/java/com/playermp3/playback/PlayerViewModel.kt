@@ -37,6 +37,7 @@ data class PlayerUiState(
     val durationMs: Long = 0L,
     val shuffleOn: Boolean = false,
     val repeatAll: Boolean = false,
+    val repeatOne: Boolean = false,
     val recentlyPlayed: List<AudioTrack> = emptyList(),
 )
 
@@ -144,6 +145,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     ?: 0L,
                 shuffleOn = c.shuffleModeEnabled,
                 repeatAll = c.repeatMode == Player.REPEAT_MODE_ALL,
+                repeatOne = c.repeatMode == Player.REPEAT_MODE_ONE,
             )
         }
     }
@@ -302,9 +304,13 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun toggleRepeat() {
         try {
             val c = controller ?: return
-            val next = if (c.repeatMode == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_OFF
-            else Player.REPEAT_MODE_ALL
-            settingsStore.setRepeatAll(next == Player.REPEAT_MODE_ALL)
+            val current = if (c.repeatMode == Player.REPEAT_MODE_ONE
+                || c.repeatMode == Player.REPEAT_MODE_ALL) c.repeatMode else Player.REPEAT_MODE_OFF
+            val next: Int =
+                if (current == Player.REPEAT_MODE_OFF) Player.REPEAT_MODE_ALL
+                else if (current == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_ONE
+                else Player.REPEAT_MODE_OFF
+            settingsStore.setRepeatAll(next != Player.REPEAT_MODE_OFF)
             controller?.repeatMode = next
         } catch (_: Exception) {
         }
@@ -312,9 +318,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun stopPlayback() {
         try {
-            val c = controller ?: return
-            c.stop()
-            c.clearMediaItems()
+            controller?.stop()
+            controller?.clearMediaItems()
         } catch (_: Exception) {
         }
         _ui.update {
@@ -330,6 +335,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     override fun onCleared() {
         tickerJob?.cancel()
         tickerJob = null
+        stopPlayback()
         try {
             controller?.release()
         } catch (_: Exception) {

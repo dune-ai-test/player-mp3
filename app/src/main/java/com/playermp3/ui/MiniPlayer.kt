@@ -52,7 +52,8 @@ fun MiniPlayer(
         (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
 
-    val dismissThreshold = with(LocalDensity.current) { 140.dp.toPx() }
+    val dismissThreshold = with(LocalDensity.current) { 70.dp.toPx() }
+    val releaseThreshold = with(LocalDensity.current) { 40.dp.toPx() }
     var slideY by remember { mutableStateOf(0f) }
 
     Box(
@@ -67,9 +68,11 @@ fun MiniPlayer(
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragStart = { slideY = 0f },
-                    onDragEnd = { slideY = 0f },
+                    onDragEnd = {
+                        if (slideY > releaseThreshold) onStop() else slideY = 0f
+                    },
                     onDragCancel = { slideY = 0f },
-                ) { change, dragAmount ->
+                ) { _, dragAmount ->
                     slideY = (slideY + dragAmount).coerceAtLeast(0f)
                     if (slideY > dismissThreshold) onStop()
                 }
