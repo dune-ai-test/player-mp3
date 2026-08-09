@@ -91,7 +91,7 @@ fun LibraryScreen(
                     }
                     items(
                         items = ui.recentlyPlayed,
-                        key = { it.id },
+                        key = { "recent-${it.id}" },
                     ) { track ->
                         PlayedRow(
                             track = track,
