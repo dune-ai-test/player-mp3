@@ -83,6 +83,12 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                     c.setPlaybackParameters(
                         PlaybackParameters(settingsStore.settings.value.playbackSpeed, 1f)
                     )
+                    val saved = settingsStore.settings.value
+                    try {
+                        c.repeatMode = if (saved.repeatAll) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF
+                        c.shuffleModeEnabled = saved.shuffle
+                    } catch (_: Exception) {
+                    }
                     c.addListener(object : Player.Listener {
                         override fun onEvents(player: Player, events: Player.Events) {
                             safePublish(c)
@@ -284,8 +290,11 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun toggleShuffle() {
         try {
-            val c = controller ?: return
-            c.shuffleModeEnabled = !c.shuffleModeEnabled
+            val c = controller
+            val next = if (c != null) !c.shuffleModeEnabled
+            else !settingsStore.settings.value.shuffle
+            settingsStore.setShuffle(next)
+            controller?.shuffleModeEnabled = next
         } catch (_: Exception) {
         }
     }
@@ -293,10 +302,28 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun toggleRepeat() {
         try {
             val c = controller ?: return
-            c.repeatMode =
-                if (c.repeatMode == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_OFF
-                else Player.REPEAT_MODE_ALL
+            val next = if (c.repeatMode == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_OFF
+            else Player.REPEAT_MODE_ALL
+            settingsStore.setRepeatAll(next == Player.REPEAT_MODE_ALL)
+            controller?.repeatMode = next
         } catch (_: Exception) {
+        }
+    }
+
+    fun stopPlayback() {
+        try {
+            val c = controller ?: return
+            c.stop()
+            c.clearMediaItems()
+        } catch (_: Exception) {
+        }
+        _ui.update {
+            it.copy(
+                currentTrack = null,
+                isPlaying = false,
+                positionMs = 0L,
+                durationMs = 0L,
+            )
         }
     }
 

@@ -1,6 +1,8 @@
 package com.playermp3.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.playermp3.playback.PlayerUiState
@@ -78,6 +83,8 @@ fun NowPlayingScreen(
     }
 
     var dragFraction by remember { mutableStateOf<Float?>(null) }
+    val scrollState = rememberScrollState()
+    val dismissThreshold = with(LocalDensity.current) { 150.dp.toPx() }
     val duration = ui.durationMs.coerceAtLeast(track.durationMs)
     val trackDuration = duration.coerceAtLeast(1L)
     val fraction = if (duration > 0L) {
@@ -90,7 +97,26 @@ fun NowPlayingScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
+            .pointerInput(Unit) {
+                // Swipe down to collapse, like tapping the back button.
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    var total = 0f
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == down.id }
+                            ?: return@awaitEachGesture
+                        if (!change.pressed) break
+                        val delta = change.positionChange().y
+                        if (delta > 0f) total += delta
+                        if (total > dismissThreshold && scrollState.value == 0) {
+                            onBack()
+                            break
+                        }
+                    }
+                }
+            }
+            .verticalScroll(scrollState)
             .padding(horizontal = 24.dp)
     ) {
         Row(

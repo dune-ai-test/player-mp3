@@ -187,6 +187,7 @@ fun CadenceApp(viewModel: PlayerViewModel) {
                     when (overlay) {
                         is AppScreen.Tab -> SearchScreen(
                             ui = ui,
+                            onBack = { pop() },
                             onPlay = { track, queue ->
                                 viewModel.playTrack(track, queue)
                                 navigate(AppScreen.NowPlaying)
@@ -228,6 +229,7 @@ fun CadenceApp(viewModel: PlayerViewModel) {
                 onTogglePlay = { viewModel.togglePlay() },
                 onNext = { viewModel.next() },
                 onClick = { navigate(AppScreen.NowPlaying) },
+                onStop = { viewModel.stopPlayback() },
             )
         }
     }
@@ -296,6 +298,8 @@ private fun MainTabScaffold(
                 icon = Icons.Filled.Search,
                 contentDescription = "Search",
                 color = design.text,
+                size = 44.dp,
+                padding = 26.dp,
                 onClick = onOpenSearch,
             )
         }

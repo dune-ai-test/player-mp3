@@ -12,6 +12,8 @@ data class AppSettings(
     val playbackSpeed: Float = 1.0f,
     val equalizer: Boolean = false,
     val gapless: Boolean = false,
+    val shuffle: Boolean = false,
+    val repeatAll: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -28,6 +30,8 @@ class SettingsStore(context: Context) {
             playbackSpeed = prefs.getFloat(KEY_SPEED, 1.0f),
             equalizer = prefs.getBoolean(KEY_EQ, false),
             gapless = prefs.getBoolean(KEY_GAPLESS, false),
+            shuffle = prefs.getBoolean(KEY_SHUFFLE, false),
+            repeatAll = prefs.getBoolean(KEY_REPEAT, false),
         )
 
     fun setThemeMode(mode: ThemeMode) {
@@ -65,11 +69,23 @@ class SettingsStore(context: Context) {
         _settings.value = _settings.value.copy(gapless = on)
     }
 
+    fun setShuffle(on: Boolean) {
+        prefs.edit().putBoolean(KEY_SHUFFLE, on).apply()
+        _settings.value = _settings.value.copy(shuffle = on)
+    }
+
+    fun setRepeatAll(on: Boolean) {
+        prefs.edit().putBoolean(KEY_REPEAT, on).apply()
+        _settings.value = _settings.value.copy(repeatAll = on)
+    }
+
     private companion object {
         const val KEY_THEME = "theme"
         const val KEY_FOLDERS = "folders"
         const val KEY_SPEED = "speed"
         const val KEY_EQ = "equalizer"
         const val KEY_GAPLESS = "gapless"
+        const val KEY_SHUFFLE = "shuffle"
+        const val KEY_REPEAT = "repeat_all"
     }
 }
