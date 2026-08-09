@@ -10,13 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,10 +26,8 @@ import com.playermp3.data.AudioTrack
 import com.playermp3.playback.PlayerUiState
 import com.playermp3.ui.AlbumArt
 import com.playermp3.ui.GlassSurface
-import com.playermp3.ui.HomeTab
 import com.playermp3.ui.RoundControl
 import com.playermp3.ui.SectionHeader
-import com.playermp3.ui.TopNav
 import com.playermp3.ui.theme.TextPrimary
 import com.playermp3.ui.theme.TextSecondary
 import com.playermp3.ui.theme.TextTertiary
@@ -39,36 +35,15 @@ import com.playermp3.ui.theme.TextTertiary
 @Composable
 fun LibraryScreen(
     ui: PlayerUiState,
-    selectedTab: HomeTab,
-    onTabSelect: (HomeTab) -> Unit,
     onPlay: (AudioTrack, List<AudioTrack>) -> Unit,
-    onAlbum: (com.playermp3.data.Album) -> Unit,
-    onOpenSearch: () -> Unit,
     onRefresh: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
     ) {
         item {
-            TopNav(
-                selected = selectedTab,
-                onSelect = onTabSelect,
-                trailing = {
-                    Row(Modifier.padding(start = 12.dp)) {
-                        RoundControl(
-                            icon = Icons.Filled.Search,
-                            contentDescription = "Search",
-                            color = TextSecondary,
-                            onClick = onOpenSearch,
-                        )
-                    }
-                },
-            )
-        }
-        item {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(8.dp))
         }
 
         when {

@@ -2,6 +2,7 @@ package com.playermp3.playback
 
 import android.app.Application
 import android.content.ComponentName
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
@@ -49,6 +50,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
     private var controller: MediaController? = null
     private var connecting = false
+    private var pendingPlay: Pair<AudioTrack, List<AudioTrack>>? = null
+    private var pendingSingle: AudioTrack? = null
 
     // ------------------------------------------------------------------
     // Connectivity & ticking
@@ -81,11 +84,22 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
                             delay(500L)
                         }
                     }
+                    pendingPlay?.let { (track, queue) ->
+                        pendingPlay = null
+                        playTrack(track, queue)
+                    }
+                    pendingSingle?.let { track ->
+                        pendingSingle = null
+                        playTrackSingle(track)
+                    }
                 } catch (_: Exception) {
                     connecting = false
                 }
             },
-            java.util.concurrent.Executors.newSingleThreadExecutor()
+            // MediaController methods must be called from the application's
+            // main thread (the looper that created it), so the connect
+            // callback runs on the main executor instead of a worker thread.
+            ContextCompat.getMainExecutor(getApplication())
         )
     }
 
@@ -177,57 +191,108 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     // ------------------------------------------------------------------
 
     fun playTrack(track: AudioTrack, queue: List<AudioTrack>) {
-        val c = controller ?: return
-        val items = queue.map { it.toMediaItem() }
-        val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
-        if (items.isEmpty()) return
-
-        c.setMediaItems(items, startIndex, 0L)
-        c.prepare()
-        c.play()
-        recordRecent(track)
+        pendingPlay = track to queue
+        val c = controller
+        if (c != null) {
+            startPlayback(c, track, queue)
+        } else {
+            connect()
+        }
     }
 
     fun playTrackSingle(track: AudioTrack) {
-        val c = controller ?: return
-        c.setMediaItem(track.toMediaItem())
-        c.prepare()
-        c.play()
-        recordRecent(track)
+        pendingSingle = track
+        val c = controller
+        if (c != null) {
+            startSingle(c, track)
+        } else {
+            connect()
+        }
+    }
+
+    private fun startPlayback(c: MediaController, track: AudioTrack, queue: List<AudioTrack>) {
+        try {
+            val items = queue.map { it.toMediaItem() }
+            if (items.isEmpty()) return
+            val startIndex = queue.indexOfFirst { it.id == track.id }.coerceAtLeast(0)
+            c.setMediaItems(items, startIndex, 0L)
+            c.prepare()
+            c.play()
+            recordRecent(track)
+        } catch (_: Exception) {
+            // Never let a session hiccup take down the UI.
+        }
+    }
+
+    private fun startSingle(c: MediaController, track: AudioTrack) {
+        try {
+            c.setMediaItem(track.toMediaItem())
+            c.prepare()
+            c.play()
+            recordRecent(track)
+        } catch (_: Exception) {
+        }
     }
 
     fun togglePlay() {
-        val c = controller ?: return
-        if (c.isPlaying) c.pause() else c.play()
+        try {
+            val c = controller ?: return
+            if (c.isPlaying) c.pause() else c.play()
+        } catch (_: Exception) {
+        }
     }
 
     fun next() {
-        controller?.seekToNextMediaItem()
+        try {
+            controller?.seekToNextMediaItem()
+        } catch (_: Exception) {
+        }
     }
 
     fun previous() {
-        val c = controller ?: return
-        if (c.currentPosition > 3_000L) {
-            c.seekTo(0L)
-        } else {
-            c.seekToPreviousMediaItem()
+        try {
+            val c = controller ?: return
+            if (c.currentPosition > 3_000L) {
+                c.seekTo(0L)
+            } else {
+                c.seekToPreviousMediaItem()
+            }
+        } catch (_: Exception) {
         }
     }
 
     fun seekTo(ms: Long) {
-        controller?.seekTo(ms.coerceIn(0L, _ui.value.durationMs))
+        try {
+            controller?.seekTo(ms.coerceIn(0L, _ui.value.durationMs))
+        } catch (_: Exception) {
+        }
     }
 
     fun toggleShuffle() {
-        val c = controller ?: return
-        c.shuffleModeEnabled = !c.shuffleModeEnabled
+        try {
+            val c = controller ?: return
+            c.shuffleModeEnabled = !c.shuffleModeEnabled
+        } catch (_: Exception) {
+        }
     }
 
     fun toggleRepeat() {
-        val c = controller ?: return
-        c.repeatMode =
-            if (c.repeatMode == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_OFF
-            else Player.REPEAT_MODE_ALL
+        try {
+            val c = controller ?: return
+            c.repeatMode =
+                if (c.repeatMode == Player.REPEAT_MODE_ALL) Player.REPEAT_MODE_OFF
+                else Player.REPEAT_MODE_ALL
+        } catch (_: Exception) {
+        }
+    }
+
+    override fun onCleared() {
+        try {
+            controller?.release()
+        } catch (_: Exception) {
+        }
+        controller = null
+        super.onCleared()
     }
 
     internal fun finalizeFromMediaItem(item: MediaItem): AudioTrack {

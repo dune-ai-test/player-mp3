@@ -2,16 +2,23 @@ package com.playermp3.playback
 
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import kotlin.OptIn
 
+@OptIn(UnstableApi::class)
 class PlayerService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
 
     override fun onCreate() {
         super.onCreate()
+        setMediaNotificationProvider(
+            DefaultMediaNotificationProvider.Builder(this).build()
+        )
         val player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder()

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -44,9 +43,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.playermp3.data.AppSettings
 import com.playermp3.playback.PlayerUiState
-import com.playermp3.ui.GlassSurface
-import com.playermp3.ui.HomeTab
-import com.playermp3.ui.TopNav
 import com.playermp3.ui.theme.LocalAppDesign
 import com.playermp3.ui.theme.MidnightGradient
 import com.playermp3.ui.theme.ThemeMode
@@ -55,8 +51,6 @@ import com.playermp3.ui.theme.ThemeMode
 fun SettingsScreen(
     ui: PlayerUiState,
     settings: AppSettings,
-    selectedTab: HomeTab,
-    onTabSelect: (HomeTab) -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onPickFolders: () -> Unit,
     onClearFolders: () -> Unit,
@@ -73,20 +67,15 @@ fun SettingsScreen(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding(),
+            .fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
             start = 20.dp,
             end = 20.dp,
-            top = 4.dp,
+            top = 16.dp,
             bottom = 28.dp,
         ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            TopNav(selected = selectedTab, onSelect = onTabSelect)
-        }
-
         item {
             Box(
                 modifier = Modifier

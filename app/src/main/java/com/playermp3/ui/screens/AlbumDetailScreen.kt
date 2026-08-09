@@ -37,9 +37,7 @@ import com.playermp3.data.Album
 import com.playermp3.data.AudioTrack
 import com.playermp3.playback.PlayerUiState
 import com.playermp3.ui.AlbumArt
-import com.playermp3.ui.HomeTab
 import com.playermp3.ui.RoundControl
-import com.playermp3.ui.TopNav
 import com.playermp3.ui.TrackRow
 import com.playermp3.ui.formatTime
 import com.playermp3.ui.theme.GlassCard
@@ -52,19 +50,39 @@ import com.playermp3.ui.theme.TextTertiary
 fun AlbumDetailScreen(
     album: Album,
     ui: PlayerUiState,
-    onTabSelect: (HomeTab) -> Unit,
+    onBack: () -> Unit,
     onPlay: (AudioTrack, List<AudioTrack>) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
     ) {
-        TopNav(
-            selected = HomeTab.Albums,
-            onSelect = onTabSelect,
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            RoundControl(
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                size = 44.dp,
+                padding = 26.dp,
+                color = TextPrimary,
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.CenterStart),
+            )
+            Text(
+                text = album.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = TextPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 72.dp),
+            )
+        }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

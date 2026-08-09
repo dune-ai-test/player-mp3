@@ -9,7 +9,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -17,10 +28,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.playermp3.data.Album
+import com.playermp3.data.AppSettings
+import com.playermp3.data.AudioTrack
+import com.playermp3.playback.PlayerUiState
 import com.playermp3.playback.PlayerViewModel
 import com.playermp3.ui.screens.AlbumDetailScreen
 import com.playermp3.ui.screens.AlbumsScreen
@@ -29,6 +45,7 @@ import com.playermp3.ui.screens.NowPlayingScreen
 import com.playermp3.ui.screens.SearchScreen
 import com.playermp3.ui.screens.SettingsScreen
 import com.playermp3.ui.theme.LocalAppDesign
+import com.playermp3.ui.theme.ThemeMode
 
 enum class HomeTab(val label: String) {
     Library("Library"),
@@ -53,25 +70,27 @@ fun CadenceApp(viewModel: PlayerViewModel) {
     val settings by viewModel.settings.collectAsState()
     val design = LocalAppDesign.current
 
-    var stack by remember { mutableStateOf(listOf<AppScreen>(AppScreen.Tab(HomeTab.Library))) }
-    val current = stack.last()
+    // The three main tabs live in a horizontal pager; Album detail, search
+    // and the now-playing screen are pushed on top.
+    var selectedTab by remember { mutableStateOf(HomeTab.Library) }
+    var pushed by remember { mutableStateOf(listOf<AppScreen>()) }
+    val current = pushed.lastOrNull()
 
     fun navigate(screen: AppScreen) {
-        stack = stack + screen
+        pushed = pushed + screen
     }
 
     fun openTab(tab: HomeTab) {
-        if (tab == HomeTab.Library || tab == HomeTab.Albums || tab == HomeTab.Settings) {
-            val last = stack.last()
-            if (last is AppScreen.Tab && last.tab == tab) return
-            stack = listOf(AppScreen.Tab(tab))
-        } else {
+        if (tab == HomeTab.Search) {
             navigate(AppScreen.Tab(tab))
+        } else {
+            selectedTab = tab
+            pushed = emptyList()
         }
     }
 
     fun pop() {
-        if (stack.size > 1) stack = stack.dropLast(1)
+        pushed = if (pushed.size > 1) pushed.dropLast(1) else emptyList()
     }
 
     val context = LocalContext.current
@@ -115,7 +134,7 @@ fun CadenceApp(viewModel: PlayerViewModel) {
         }
     }
 
-    BackHandler(enabled = stack.size > 1) {
+    BackHandler(enabled = pushed.isNotEmpty()) {
         pop()
     }
 
@@ -130,58 +149,43 @@ fun CadenceApp(viewModel: PlayerViewModel) {
                 .weight(1f)
         ) {
             when (val screen = current) {
-                is AppScreen.Tab -> when (screen.tab) {
-                    HomeTab.Library -> LibraryScreen(
-                        ui = ui,
-                        selectedTab = HomeTab.Library,
-                        onTabSelect = { openTab(it) },
-                        onPlay = { track, queue ->
-                            viewModel.playTrack(track, queue)
-                            navigate(AppScreen.NowPlaying)
-                        },
-                        onAlbum = { album -> navigate(AppScreen.AlbumDetail(album)) },
-                        onOpenSearch = { navigate(AppScreen.Tab(HomeTab.Search)) },
-                        onRefresh = { viewModel.refreshLibrary() },
-                    )
+                null -> MainTabScaffold(
+                    selectedTab = selectedTab,
+                    onSelectTab = { openTab(it) },
+                    ui = ui,
+                    settings = settings,
+                    onPlay = { track, queue ->
+                        viewModel.playTrack(track, queue)
+                        navigate(AppScreen.NowPlaying)
+                    },
+                    onAlbum = { album -> navigate(AppScreen.AlbumDetail(album)) },
+                    onOpenSearch = { navigate(AppScreen.Tab(HomeTab.Search)) },
+                    onRefresh = { viewModel.refreshLibrary() },
+                    onThemeMode = { viewModel.setThemeMode(it) },
+                    onPickFolders = { folderLauncher.launch(null) },
+                    onClearFolders = { viewModel.clearFolders() },
+                    onToggleRepeat = { viewModel.toggleRepeat() },
+                    onToggleShuffle = { viewModel.toggleShuffle() },
+                    onCycleSpeed = { viewModel.cyclePlaybackSpeed() },
+                    onToggleEqualizer = { viewModel.setEqualizer(!settings.equalizer) },
+                    onToggleGapless = { viewModel.setGapless(!settings.gapless) },
+                    onOpenNowPlaying = {
+                        if (ui.currentTrack != null) navigate(AppScreen.NowPlaying)
+                    },
+                )
 
-                    HomeTab.Search -> SearchScreen(
-                        ui = ui,
-                        onPlay = { track, queue ->
-                            viewModel.playTrack(track, queue)
-                            navigate(AppScreen.NowPlaying)
-                        },
-                    )
-
-                    HomeTab.Albums -> AlbumsScreen(
-                        ui = ui,
-                        selectedTab = HomeTab.Albums,
-                        onTabSelect = { openTab(it) },
-                        onAlbum = { album -> navigate(AppScreen.AlbumDetail(album)) },
-                    )
-
-                    HomeTab.Settings -> SettingsScreen(
-                        ui = ui,
-                        settings = settings,
-                        selectedTab = HomeTab.Settings,
-                        onTabSelect = { openTab(it) },
-                        onThemeMode = { viewModel.setThemeMode(it) },
-                        onPickFolders = { folderLauncher.launch(null) },
-                        onClearFolders = { viewModel.clearFolders() },
-                        onToggleRepeat = { viewModel.toggleRepeat() },
-                        onToggleShuffle = { viewModel.toggleShuffle() },
-                        onCycleSpeed = { viewModel.cyclePlaybackSpeed() },
-                        onToggleEqualizer = { viewModel.setEqualizer(!settings.equalizer) },
-                        onToggleGapless = { viewModel.setGapless(!settings.gapless) },
-                        onOpenNowPlaying = {
-                            if (ui.currentTrack != null) navigate(AppScreen.NowPlaying)
-                        },
-                    )
-                }
+                is AppScreen.Tab -> SearchScreen(
+                    ui = ui,
+                    onPlay = { track, queue ->
+                        viewModel.playTrack(track, queue)
+                        navigate(AppScreen.NowPlaying)
+                    },
+                )
 
                 is AppScreen.AlbumDetail -> AlbumDetailScreen(
                     album = screen.album,
                     ui = ui,
-                    onTabSelect = { openTab(it) },
+                    onBack = { pop() },
                     onPlay = { track, queue ->
                         viewModel.playTrack(track, queue)
                         navigate(AppScreen.NowPlaying)
@@ -202,7 +206,7 @@ fun CadenceApp(viewModel: PlayerViewModel) {
         }
 
         val track = ui.currentTrack
-        if (track != null && current != AppScreen.NowPlaying) {
+        if (track != null && current !is AppScreen.NowPlaying) {
             MiniPlayer(
                 track = track,
                 isPlaying = ui.isPlaying,
@@ -212,6 +216,113 @@ fun CadenceApp(viewModel: PlayerViewModel) {
                 onNext = { viewModel.next() },
                 onClick = { navigate(AppScreen.NowPlaying) },
             )
+        }
+    }
+}
+
+@Composable
+private fun MainTabScaffold(
+    selectedTab: HomeTab,
+    onSelectTab: (HomeTab) -> Unit,
+    ui: PlayerUiState,
+    settings: AppSettings,
+    onPlay: (AudioTrack, List<AudioTrack>) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onOpenSearch: () -> Unit,
+    onRefresh: () -> Unit,
+    onThemeMode: (ThemeMode) -> Unit,
+    onPickFolders: () -> Unit,
+    onClearFolders: () -> Unit,
+    onToggleRepeat: () -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleSpeed: () -> Unit,
+    onToggleEqualizer: () -> Unit,
+    onToggleGapless: () -> Unit,
+    onOpenNowPlaying: () -> Unit,
+) {
+    val design = LocalAppDesign.current
+    val pages = HomeTab.mainTabs
+    val pagerState = rememberPagerState(
+        initialPage = pages.indexOf(selectedTab).coerceAtLeast(0)
+    ) { pages.size }
+
+    LaunchedEffect(selectedTab) {
+        val target = pages.indexOf(selectedTab)
+        if (pagerState.currentPage != target) {
+            pagerState.animateScrollToPage(target)
+        }
+    }
+    LaunchedEffect(pagerState.settledPage) {
+        val settled = pages.getOrNull(pagerState.settledPage)
+        if (settled != null && settled != selectedTab) {
+            onSelectTab(settled)
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Cadence",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = design.text,
+                )
+                Text(
+                    text = "Music player",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = design.textSecondary,
+                )
+            }
+            RoundControl(
+                icon = Icons.Filled.Search,
+                contentDescription = "Search",
+                color = design.text,
+                onClick = onOpenSearch,
+            )
+        }
+
+        TopNav(selected = selectedTab, onSelect = { onSelectTab(it) })
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) { page ->
+            when (pages[page]) {
+                HomeTab.Library -> LibraryScreen(
+                    ui = ui,
+                    onPlay = onPlay,
+                    onRefresh = onRefresh,
+                )
+
+                HomeTab.Albums -> AlbumsScreen(
+                    ui = ui,
+                    onAlbum = onAlbum,
+                )
+
+                HomeTab.Settings -> SettingsScreen(
+                    ui = ui,
+                    settings = settings,
+                    onThemeMode = onThemeMode,
+                    onPickFolders = onPickFolders,
+                    onClearFolders = onClearFolders,
+                    onToggleRepeat = onToggleRepeat,
+                    onToggleShuffle = onToggleShuffle,
+                    onCycleSpeed = onCycleSpeed,
+                    onToggleEqualizer = onToggleEqualizer,
+                    onToggleGapless = onToggleGapless,
+                    onOpenNowPlaying = onOpenNowPlaying,
+                )
+
+                HomeTab.Search -> Box(modifier = Modifier.height(1.dp))
+            }
         }
     }
 }
