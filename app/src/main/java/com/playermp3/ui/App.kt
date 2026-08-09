@@ -148,60 +148,73 @@ fun CadenceApp(viewModel: PlayerViewModel) {
                 .fillMaxSize()
                 .weight(1f)
         ) {
-            when (val screen = current) {
-                null -> MainTabScaffold(
-                    selectedTab = selectedTab,
-                    onSelectTab = { openTab(it) },
-                    ui = ui,
-                    settings = settings,
-                    onPlay = { track, queue ->
-                        viewModel.playTrack(track, queue)
-                        navigate(AppScreen.NowPlaying)
-                    },
-                    onAlbum = { album -> navigate(AppScreen.AlbumDetail(album)) },
-                    onOpenSearch = { navigate(AppScreen.Tab(HomeTab.Search)) },
-                    onRefresh = { viewModel.refreshLibrary() },
-                    onThemeMode = { viewModel.setThemeMode(it) },
-                    onPickFolders = { folderLauncher.launch(null) },
-                    onClearFolders = { viewModel.clearFolders() },
-                    onToggleRepeat = { viewModel.toggleRepeat() },
-                    onToggleShuffle = { viewModel.toggleShuffle() },
-                    onCycleSpeed = { viewModel.cyclePlaybackSpeed() },
-                    onToggleEqualizer = { viewModel.setEqualizer(!settings.equalizer) },
-                    onToggleGapless = { viewModel.setGapless(!settings.gapless) },
-                    onOpenNowPlaying = {
-                        if (ui.currentTrack != null) navigate(AppScreen.NowPlaying)
-                    },
-                )
+            // The main tab scaffold is ALWAYS composed. Pushed screens
+            // (album detail, search, now playing) are drawn as opaque
+            // overlays on top, so collapsing a screen never disposes and
+            // re-mounts the pager underneath.
+            MainTabScaffold(
+                selectedTab = selectedTab,
+                onSelectTab = { openTab(it) },
+                ui = ui,
+                settings = settings,
+                onPlay = { track, queue ->
+                    viewModel.playTrack(track, queue)
+                    navigate(AppScreen.NowPlaying)
+                },
+                onAlbum = { album -> navigate(AppScreen.AlbumDetail(album)) },
+                onOpenSearch = { navigate(AppScreen.Tab(HomeTab.Search)) },
+                onRefresh = { viewModel.refreshLibrary() },
+                onThemeMode = { viewModel.setThemeMode(it) },
+                onPickFolders = { folderLauncher.launch(null) },
+                onClearFolders = { viewModel.clearFolders() },
+                onToggleRepeat = { viewModel.toggleRepeat() },
+                onToggleShuffle = { viewModel.toggleShuffle() },
+                onCycleSpeed = { viewModel.cyclePlaybackSpeed() },
+                onToggleEqualizer = { viewModel.setEqualizer(!settings.equalizer) },
+                onToggleGapless = { viewModel.setGapless(!settings.gapless) },
+                onOpenNowPlaying = {
+                    if (ui.currentTrack != null) navigate(AppScreen.NowPlaying)
+                },
+            )
 
-                is AppScreen.Tab -> SearchScreen(
-                    ui = ui,
-                    onPlay = { track, queue ->
-                        viewModel.playTrack(track, queue)
-                        navigate(AppScreen.NowPlaying)
-                    },
-                )
+            val overlay = pushed.lastOrNull()
+            if (overlay != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Brush.verticalGradient(design.background)),
+                ) {
+                    when (overlay) {
+                        is AppScreen.Tab -> SearchScreen(
+                            ui = ui,
+                            onPlay = { track, queue ->
+                                viewModel.playTrack(track, queue)
+                                navigate(AppScreen.NowPlaying)
+                            },
+                        )
 
-                is AppScreen.AlbumDetail -> AlbumDetailScreen(
-                    album = screen.album,
-                    ui = ui,
-                    onBack = { pop() },
-                    onPlay = { track, queue ->
-                        viewModel.playTrack(track, queue)
-                        navigate(AppScreen.NowPlaying)
-                    },
-                )
+                        is AppScreen.AlbumDetail -> AlbumDetailScreen(
+                            album = overlay.album,
+                            ui = ui,
+                            onBack = { pop() },
+                            onPlay = { track, queue ->
+                                viewModel.playTrack(track, queue)
+                                navigate(AppScreen.NowPlaying)
+                            },
+                        )
 
-                AppScreen.NowPlaying -> NowPlayingScreen(
-                    ui = ui,
-                    onBack = { pop() },
-                    onTogglePlay = { viewModel.togglePlay() },
-                    onNext = { viewModel.next() },
-                    onPrevious = { viewModel.previous() },
-                    onSeekTo = { ms -> viewModel.seekTo(ms) },
-                    onToggleShuffle = { viewModel.toggleShuffle() },
-                    onToggleRepeat = { viewModel.toggleRepeat() },
-                )
+                        AppScreen.NowPlaying -> NowPlayingScreen(
+                            ui = ui,
+                            onBack = { pop() },
+                            onTogglePlay = { viewModel.togglePlay() },
+                            onNext = { viewModel.next() },
+                            onPrevious = { viewModel.previous() },
+                            onSeekTo = { ms -> viewModel.seekTo(ms) },
+                            onToggleShuffle = { viewModel.toggleShuffle() },
+                            onToggleRepeat = { viewModel.toggleRepeat() },
+                        )
+                    }
+                }
             }
         }
 
