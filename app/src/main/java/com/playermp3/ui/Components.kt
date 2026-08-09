@@ -82,15 +82,6 @@ fun AlbumArt(
                     listOf(fallback, fallback.copy(alpha = 0.55f))
                 )
             ),
-        val fallback = palette[(albumTitle.hashCode().absoluteValue) % palette.size]
-    Box(
-        modifier = (if (size != null) modifier.size(size) else modifier)
-            .clip(RoundedCornerShape(corner))
-            .background(
-                Brush.linearGradient(
-                    listOf(fallback, fallback.copy(alpha = 0.55f))
-                )
-            ),
         contentAlignment = Alignment.Center,
     ) {
         if (!artworkUri.isNullOrBlank()) {

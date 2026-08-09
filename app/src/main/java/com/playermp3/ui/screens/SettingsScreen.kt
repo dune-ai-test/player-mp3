@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -225,44 +226,29 @@ fun SettingsScreen(
                     icon = Icons.Filled.Equalizer,
                     iconBg = LocalAppDesign.current.surfaceStrong,
                     label = "Equalizer",
-                    toggle = PillToggle(checked = settings.equalizer, onChange = onToggleEqualizer),
+                    toggle = { PillToggle(checked = settings.equalizer, onChange = onToggleEqualizer) },
                 )
                 SettingsRow(
                     icon = Icons.Filled.Bolt,
                     iconBg = LocalAppDesign.current.surfaceStrong,
                     label = "Gapless Playback",
-                    toggle = PillToggle(checked = settings.gapless, onChange = onToggleGapless),
+                    toggle = { PillToggle(checked = settings.gapless, onChange = onToggleGapless) },
                 )
                 SettingsRow(
                     icon = Icons.Filled.Repeat,
                     iconBg = LocalAppDesign.current.surfaceStrong,
                     label = "Repeat All",
-                    toggle = PillToggle(checked = ui.repeatAll, onChange = onToggleRepeat),
+                    toggle = { PillToggle(checked = ui.repeatAll, onChange = onToggleRepeat) },
                 )
                 SettingsRow(
                     icon = Icons.Filled.Shuffle,
                     iconBg = LocalAppDesign.current.surfaceStrong,
                     label = "Shuffle All",
-                    toggle = PillToggle(checked = ui.shuffleOn, onChange = onToggleShuffle),
+                    toggle = { PillToggle(checked = ui.shuffleOn, onChange = onToggleShuffle) },
                 )
             }
         }
     }
-}
-
-@Composable
-private fun Icon(
-    icon: ImageVector,
-    contentDescription: String? = null,
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
-    androidx.compose.material3.Icon(
-        imageVector = icon,
-        contentDescription = contentDescription,
-        tint = tint,
-        modifier = modifier,
-    )
 }
 
 @Composable
@@ -275,7 +261,7 @@ private fun RowIcon(icon: ImageVector, background: Color) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            icon = icon,
+            imageVector = icon,
             contentDescription = null,
             tint = LocalAppDesign.current.text,
             modifier = Modifier.size(24.dp),
@@ -321,7 +307,12 @@ private fun SettingsRow(
                 .background(iconBg),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, LocalAppDesign.current.textPrimary, Modifier.size(22.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = LocalAppDesign.current.text,
+                modifier = Modifier.size(22.dp),
+            )
         }
         Spacer(Modifier.width(14.dp))
         Text(
@@ -341,7 +332,12 @@ private fun SettingsRow(
         if (toggle != null) {
             toggle()
         } else if (value == null) {
-            Icon(Icons.Filled.ChevronRight, null, LocalAppDesign.current.textTertiary, Modifier.size(20.dp))
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = LocalAppDesign.current.textTertiary,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -407,7 +403,7 @@ private fun ThemeSelect(
 }
 
 @Composable
-private fun ThemeOption(
+private fun androidx.compose.foundation.layout.RowScope.ThemeOption(
     label: String,
     swatch: @Composable () -> Unit,
     active: Boolean,
